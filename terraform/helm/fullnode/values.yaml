@@ -1,0 +1,141 @@
+chain:
+  era: 1
+  name: devnet
+  genesisConfigmap:
+
+aptos_chains:
+  devnet:
+    id: 24
+    waypoint: 0:e5844c0dd980f6a75bd8dee5901425df5c1420883dfa216f79c9bfd287642573
+
+# fullnode network config
+fullnode_identity:
+  # Set this to start fullnode from an existing key.
+  # If not set, it will generate a random one on startup.
+fullnode_max_inbound_connections: 100
+
+# fullnode pruner config
+# disable ledger pruning will keep all the history transaction
+enable_ledger_pruner: true
+# set pruner window to override the default value
+ledger_prune_window: 
+
+# fullnode state sync config
+# To make fullnode execute every transaction, set:
+# bootstrapping_mode: ExecuteTransactionsFromGenesis
+# continuous_syncing_mode: ExecuteTransactions
+bootstrapping_mode: ApplyTransactionOutputsFromGenesis
+continuous_syncing_mode: ApplyTransactionOutputs
+
+rust_log: info
+
+image:
+  repo: aptoslabs/validator
+  tag: devnet
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 8
+    memory: 15Gi
+  requests:
+    cpu: 8
+    memory: 15Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+storage:
+  # Set this to a StorageClass available on your Kubernetes cluster
+  class:
+  size: 512Gi
+
+service:
+  # Change this to LoadBalancer to expose the REST API, aptosnet endpoint externally
+  type: ClusterIP
+  externalTrafficPolicy:
+  loadBalancerSourceRanges: []
+  annotations: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+  annotations: {}
+
+logging:
+  address:
+
+backup:
+  image:
+    repo: aptoslabs/tools
+    tag: devnet
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  enable: false
+  config:
+    location:
+    s3:
+      bucket:
+    gcs:
+      bucket:
+    azure:
+      account:
+      container:
+      sas:
+    state_snapshot_interval_epochs: 24
+    transaction_batch_size: 100000
+
+backup_verify:
+  schedule: '@daily'
+  resources:
+    limits:
+      cpu: 0.5
+      memory: 512Mi
+    requests:
+      cpu: 0.5
+      memory: 512Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+restore:
+  image:
+    repo: aptoslabs/tools
+    tag: devnet
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 6
+      memory: 15Gi
+    requests:
+      cpu: 6
+      memory: 15Gi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  config:
+    location:
+    s3:
+      bucket:
+    gcs:
+      bucket:
+    azure:
+      account:
+      container:
+      sas:
+    trusted_waypoints: []
+    concurrent_downloads: 2
+    restore_era:

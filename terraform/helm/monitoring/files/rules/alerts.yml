@@ -1,0 +1,109 @@
+groups:
+- name: "Aptos alerts"
+  rules:
+  # consensus
+  - alert: Zero Block Commit Rate
+    expr: rate(aptos_consensus_last_committed_round{role="validator"}[1m]) == 0 OR absent(aptos_consensus_last_committed_round{role="validator"})
+    for: 20m
+    labels:
+      severity: error
+      summary: "The block commit rate is low"
+    annotations:
+  - alert: High local timeout rate
+    expr: rate(aptos_consensus_timeout_count{role="validator"}[1m]) > 0.5
+    for: 20m
+    labels:
+      severity: warning
+      summary: "Consensus timeout rate is high"
+    annotations:
+  - alert: High consensus error rate
+    expr: rate(aptos_consensus_error_count{role="validator"}[1m]) / on (role) rate(consensus_duration_count{op='main_loop', role="validator"}[1m]) > 0.25
+    for: 20m
+    labels:
+      severity: warning
+      summary: "Consensus error rate is high"
+    annotations:
+
+    # State sync alerts
+  - alert: State sync is not making progress
+    expr: rate(aptos_state_sync_version{type="synced"}[5m]) == 0 OR absent(aptos_state_sync_version{type="synced"})
+    for: 5m
+    labels:
+      severity: error
+      summary: "State sync is not making progress (i.e., it is not keeping up with the head of the blockchain)"
+    annotations:
+
+    # Mempool alerts
+  - alert: Mempool has no active upstream peers
+    expr: (sum by (kubernetes_pod_name) (aptos_mempool_active_upstream_peers_count)) == 0
+    for: 3m
+    labels:
+      severity: error
+      summary: "Mempool has no active upstream peers (unable to forward transactions to anyone!)"
+    annotations:
+  - alert: Mempool is at >80% capacity
+    expr: aptos_core_mempool_index_size{index="system_ttl"} > 800000 # assumes default mempool size 1_000_000
+    for: 5m
+    labels:
+      severity: warning
+      summary: "Mempool is at >80% capacity (it may soon become full!)"
+    annotations:
+  - alert: Mempool is growing at a significant rate
+    expr: rate(aptos_core_mempool_index_size{index="system_ttl"}[1m]) > 30000
+    for: 10m
+    labels:
+      severity: warning
+      summary: "Mempool is growing at a significant rate (it may soon become full!)"
+    annotations:
+
+  # Networking alerts
+  - alert: Validator Connected Peers
+    expr: 0 == min(aptos_network_peers{state="connected", role_type="validator", role="validator"})
+    for: 15m
+    labels:
+      severity: error
+      summary: "Validator node has zero connected peers"
+    annotations:
+
+  # Storage core metrics
+  - alert: Validator Low Disk Space
+    expr: (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*validator-e.*"} - kubelet_volume_stats_used_bytes) / 1024 / 1024 / 1024 < 50
+    for: 5m
+    labels:
+      severity: warning
+      summary: "Less than 50 GB of free space on Validator DB volume."
+    annotations:
+  - alert: Validator Very Low Disk Space
+    expr: (kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*validator-e.*"} - kubelet_volume_stats_used_bytes) / 1024 / 1024 / 1024 < 20
+    for: 5m
+    labels:
+      severity: critical
+      summary: "Less than 20 GB of free space on Validator DB volume."
+    annotations:
+  - alert: AptosDB API Success Rate
+    expr: sum by(kubernetes_pod_name) (rate(aptos_storage_api_latency_seconds_count{result="Ok"}[1m])) / sum by(kubernetes_pod_name) (rate(aptos_storage_api_latency_seconds_count[1m])) < 0.99  # 99%
+    for: 5m
+    labels:
+      severity: error
+      summary: "AptosDB API success rate dropped."
+    annotations:
+  - alert: RocksDB Read Latency
+    expr: sum by (kubernetes_pod_name) (rate(aptos_schemadb_get_latency_seconds_sum[1m])) / sum by (kubernetes_pod_name) (rate(aptos_schemadb_get_latency_seconds_count[1m])) > 0.001  # 1 millisecond
+    for: 5m
+    labels:
+      severity: warning
+      summary: "RocksDB read latency raised."
+    annotations:
+
+  # Logging alerts
+  - alert: Logs Being Dropped
+    expr: 1 < (rate(aptos_struct_log_queue_error[1m]) + rate(aptos_struct_log_send_error[1m]))
+    for: 5m
+    labels:
+      severity: warning
+      summary: "Logs being dropped"
+    annotations:
+      description: "Logging Transmit Error rate is high \
+        check the logging dashboard and \
+        there may be network issues, downstream throughput issues, or something wrong with Vector \
+        TODO: Runbook"
