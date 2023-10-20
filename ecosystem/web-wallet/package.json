@@ -60,7 +60,7 @@
     ]
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.0.0-rc.13",
+    "@tauri-apps/cli": "^2.0.0-alpha.16",
     "@types/chrome": "^0.0.183",
     "@types/react": "^18.0.6",
     "@types/webextension-polyfill": "^0.8.3",
