@@ -96,7 +96,7 @@ gem 'recaptcha', '~> 5.10'
 
 # UI components
 gem 'better_html'
-gem 'view_component', '~> 2.54'
+gem 'view_component', '~> 3.9'
 
 # Monitoring
 gem 'lograge', '~> 0.12.0'
